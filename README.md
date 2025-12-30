@@ -1,38 +1,41 @@
-Mini SoC RV32I (Vivado-first, Verilog-only)
+RV32I Mini SoC (Vivado-first, Verilog-only)
 
-Thu muc `vivado_rv32i_minisoc/` la ban copy doc lap (self-contained), khong dung chung file voi `rv32i_minisoc/`.
+`vivado_rv32i_minisoc/` is a self-contained copy of the project (safe to move/copy elsewhere).
 
-Trang nay cap nhat theo hien trang:
-- RTL + testbench: Verilog (.v), khong dung SystemVerilog (.sv).
-- Mo phong chinh: Vivado xsim (Vivado 2025.2).
-- `rom.hex` duoc nap qua plusarg `+romhex=...` (xem `vivado_rv32i_minisoc/rtl/simple_rom.v`).
+Current status:
+- RTL + testbench: Verilog-2001 (`.v`) only (no SystemVerilog).
+- Primary simulation flow: Vivado xsim (tested with Vivado 2025.2).
+- `rom.hex` is loaded via a plusarg `+romhex=...` (see `rtl/simple_rom.v`).
 
-Bao cao chi tiet: `vivado_rv32i_minisoc/REPORT.md`
+Full report: `REPORT.md`
 
-## Thu muc
-- RTL: `vivado_rv32i_minisoc/rtl`
-- Testbench: `vivado_rv32i_minisoc/sim`
-- Phan mem bare-metal (C/ASM): `vivado_rv32i_minisoc/software`
-- Vivado xsim flow: `vivado_rv32i_minisoc/vivado`
+## Layout
+- RTL: `rtl/`
+- Testbench: `sim/`
+- Bare-metal software (C/ASM): `software/`
+- Vivado xsim scripts: `vivado/`
 
-## Chay mo phong bang Vivado (khuyen dung)
+## Run simulation with Vivado (recommended)
 
-Dung tu trong thu muc `vivado_rv32i_minisoc/`:
+Run from inside `vivado_rv32i_minisoc/`:
 
-Batch:
-- Khong tao project (portable): `vivado -mode batch -source vivado/run_xsim_noproject.tcl`
-- Co tao project (luu vao `vivado/vivado_proj/`): `vivado -mode batch -source vivado/run_xsim.tcl`
+- Portable (no Vivado project, relative paths only): `vivado -mode batch -source vivado/run_xsim_noproject.tcl`
+- Project-based (creates `vivado/vivado_proj/`): `vivado -mode batch -source vivado/run_xsim.tcl`
 
 GUI:
 - Add RTL sources: `rtl/*.v`
 - Add simulation sources: `sim/tb_minisoc.v`
 - Simulation top: `tb_minisoc`
 
-## Chuong trinh demo (rom.hex)
+Expected output:
+- `Hello RV32I`
+- `[sim] done, exit_code=0x00000001`
 
-Co 2 cach:
-1) Dung san `rom.hex` (khong can build C): `software/rom.hex`
-2) Build lai tu C:
-   - Can RISC-V GNU toolchain (vd xPack `riscv-none-elf-gcc`) -> Vivado khong kem compiler RISC-V.
-   - Build (truyen duong dan gcc neu PowerShell khong thay trong PATH):
+## Demo program (rom.hex)
+
+Two options:
+1) Use the prebuilt `software/rom.hex` (no compiler needed).
+2) Rebuild from C:
+   - You need an external RISC-V bare-metal toolchain (Vivado does not ship `riscv-gcc`).
+   - Example (pass an explicit compiler path if not in PATH):
      - `powershell -NoProfile -ExecutionPolicy Bypass -File software\\build.ps1 -Prefix riscv-none-elf -GccExe "<toolchain_bin>\\riscv-none-elf-gcc.exe"`

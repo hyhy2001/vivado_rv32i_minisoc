@@ -1,35 +1,35 @@
-# RV32I quick reference (tóm tắt)
+# RV32I quick reference
 
-RV32I là tập lệnh cơ sở 32-bit của RISC-V (không gồm nhân/chia, CSR, interrupt, FPU…).
+RV32I is the base 32-bit integer instruction set of RISC-V (no mul/div, no CSR/interrupts, no FPU).
 
-## Các dạng lệnh (encoding)
+## Instruction formats (encoding)
 
 - **R-type**: `funct7 | rs2 | rs1 | funct3 | rd | opcode`
 - **I-type**: `imm[11:0] | rs1 | funct3 | rd | opcode`
 - **S-type**: `imm[11:5] | rs2 | rs1 | funct3 | imm[4:0] | opcode`
-- **B-type**: `imm[12|10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode` (offset bội số 2)
+- **B-type**: `imm[12|10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode` (PC-relative, 2-byte aligned)
 - **U-type**: `imm[31:12] | rd | opcode`
-- **J-type**: `imm[20|10:1|11|19:12] | rd | opcode` (offset bội số 2)
+- **J-type**: `imm[20|10:1|11|19:12] | rd | opcode` (PC-relative, 2-byte aligned)
 
-## Nhóm lệnh chính
+## Main instruction groups
 
-- **Integer arithmetic/logical (OP/OP-IMM)**:
-  - `ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND`
-  - `ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI`
-- **Load/Store**:
-  - Load: `LB, LH, LW, LBU, LHU`
-  - Store: `SB, SH, SW`
-- **Control flow**:
+- **Integer arithmetic/logical**
+  - OP (register): `ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND`
+  - OP-IMM: `ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI`
+- **Load / Store**
+  - Loads: `LB, LH, LW, LBU, LHU`
+  - Stores: `SB, SH, SW`
+- **Control flow**
   - Branch: `BEQ, BNE, BLT, BGE, BLTU, BGEU`
   - Jump: `JAL, JALR`
-- **Upper immediates**:
+- **Upper immediates**
   - `LUI, AUIPC`
-- **System**:
-  - `ECALL, EBREAK` (thuộc nhóm SYSTEM; thường dùng cho trap/monitor)
+- **System**
+  - `ECALL, EBREAK` (often used for traps/monitors in larger systems)
 
-## Lưu ý khi chạy C bare-metal
+## Notes for bare-metal C on RV32I
 
-- Dùng `-march=rv32i -mabi=ilp32`.
-- Tránh thư viện cần `M` (mul/div) nếu core chỉ có RV32I.
-- Cần startup (`_start`), linker script, stack, clear `.bss`, (tuỳ chọn) copy `.data`.
+- Compile flags: `-march=rv32i -mabi=ilp32`.
+- Avoid code that requires RV32M (mul/div) if your core implements RV32I only.
+- A bare-metal program needs startup (`_start`), a linker script, a stack pointer, `.bss` clear, and (optionally) `.data` copy.
 

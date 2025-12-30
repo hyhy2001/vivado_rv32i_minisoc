@@ -1,88 +1,88 @@
-# Bao cao: SoC RV32I toi thieu (Verilog-only, mo phong bang Vivado xsim)
+# Report: Minimal RV32I SoC (Verilog-only, simulated with Vivado xsim)
 
-## 1) Muc tieu
+## 1) Goal
 
-Thiet ke va mo phong 1 SoC toi thieu dua tren RISC-V RV32I co kha nang chay:
-- Chuong trinh Assembly don gian (ROM `rom.hex`)
-- Chuong trinh C bare-metal don gian (build ELF -> chuyen sang `rom.hex` -> mo phong)
+Design and simulate a minimal RISC-V RV32I SoC that can run:
+- A simple assembly program (ROM image `rom.hex`)
+- A simple bare-metal C program (build ELF -> convert to `rom.hex` -> simulate)
 
-## 2) Pham vi
+## 2) Scope
 
-- ISA: RV32I (khong CSR/interrupt, khong RV32M mul/div, khong FPU).
-- CPU: multi-cycle FSM (FETCH/DECODE/EXEC/MEM/WB).
-- SoC: ROM + RAM + MMIO (UART TX, TOHOST).
-- RTL/testbench: Verilog (.v), khong dung SystemVerilog.
+- ISA: RV32I only (no CSR/interrupts, no RV32M mul/div, no FPU).
+- CPU micro-architecture: multi-cycle FSM (FETCH/DECODE/EXEC/MEM/WB).
+- SoC blocks: ROM + RAM + a tiny MMIO map (UART TX, TOHOST).
+- RTL/testbench language: Verilog-2001 (`.v`) only.
 
 ## 3) Memory map
 
-| Vung | Dia chi | Mo ta |
+| Region | Address | Description |
 |---|---:|---|
-| ROM | `0x0000_0000` | code + `.rodata` (fetch + data-load) |
+| ROM | `0x0000_0000` | code + `.rodata` (instruction fetch + data load) |
 | RAM | `0x1000_0000` | stack + `.data` + `.bss` |
-| UART_TX | `0x2000_0000` | ghi byte -> testbench in ra console |
-| TOHOST | `0x2000_0004` | ghi word != 0 -> ket thuc mo phong |
+| UART_TX | `0x2000_0000` | store a byte to print to the console |
+| TOHOST | `0x2000_0004` | store a non-zero word to stop simulation |
 
-## 4) Kien truc SoC
+## 4) SoC architecture
 
-SoC top lam 3 viec:
-1) Ket noi CPU voi ROM (instruction fetch).
-2) Ket noi CPU voi RAM (data load/store).
-3) Address decode cho MMIO:
-   - UART TX: store 1 byte -> in ra console
-   - TOHOST: store word != 0 -> stop simulation
+The SoC top does:
+1) Connect the CPU instruction fetch to ROM.
+2) Connect the CPU data port to RAM.
+3) Decode MMIO:
+   - `UART_TX`: store 1 byte -> printed by the testbench
+   - `TOHOST`: store word != 0 -> testbench terminates
 
-File:
+RTL files:
 - SoC top: `rtl/minisoc_top.v`
 - ROM: `rtl/simple_rom.v`
 - RAM: `rtl/simple_ram.v`
 
-Luu y: de chay C, data-load can doc duoc ROM (de doc `.rodata` nhu string hang). SoC da co duong doc ROM cho data-load.
+Note: to run C, the CPU must be able to load constants/strings from ROM (`.rodata`). This SoC supports ROM data loads.
 
-## 5) CPU RV32I (multi-cycle)
+## 5) RV32I CPU (multi-cycle)
 
-CPU dung FSM:
-- RESET: PC=0, init.
-- FETCH: doc `instr` tai `pc`.
-- DECODE: tach opcode/rs/rd/immediate.
-- EXEC: tinh ALU/branch/jump/effective address.
-- MEM: thuc hien load/store.
-- WB: ghi ket qua ve thanh ghi va cap nhat PC.
+The CPU runs a simple FSM:
+- RESET: initialize PC and registers.
+- FETCH: fetch instruction at `PC`.
+- DECODE: decode fields + immediates.
+- EXEC: ALU/branch/jump/effective address.
+- MEM: load/store transaction.
+- WB: write back and update PC.
 
-File CPU: `rtl/rv32i_core.v`
+CPU RTL: `rtl/rv32i_core.v`
 
-## 6) Mo phong bang Vivado 2025.2 (xsim)
+## 6) Simulation with Vivado 2025.2 (xsim)
 
-Script batch:
-- `vivado/run_xsim_noproject.tcl` (portable, khong tao project)
-- `vivado/run_xsim.tcl` (tao project trong `vivado/vivado_proj/`)
+Scripts:
+- Portable, no project (recommended for copying/moving the folder): `vivado/run_xsim_noproject.tcl`
+- Project-based (creates `vivado/vivado_proj/`): `vivado/run_xsim.tcl`
 
-Chay:
-- (dung tu trong thu muc `vivado_rv32i_minisoc/`):
-  - `vivado -mode batch -source vivado/run_xsim_noproject.tcl`
-  - hoac `vivado -mode batch -source vivado/run_xsim.tcl`
+Run from inside `vivado_rv32i_minisoc/`:
+- `vivado -mode batch -source vivado/run_xsim_noproject.tcl`
+  or
+- `vivado -mode batch -source vivado/run_xsim.tcl`
 
 Testbench:
 - `sim/tb_minisoc.v`
 
-ROM file:
-- Testbench/ROM doc `rom.hex` qua plusarg `romhex` (duoc set trong TCL), nen khong phu thuoc working directory.
+ROM loading:
+- ROM uses plusarg `romhex` (set by the TCL scripts), so the simulator working directory does not matter.
 
-Ket qua mong doi:
-- Hien thi `Hello RV32I`
-- Ket thuc: `[sim] done, exit_code=0x00000001`
+Expected output:
+- `Hello RV32I`
+- `[sim] done, exit_code=0x00000001`
 
-## 7) Chay chuong trinh C bare-metal
+## 7) Running the bare-metal C demo
 
-Vivado chi mo phong RTL; de build C can toolchain RISC-V ben ngoai (vd xPack `riscv-none-elf-gcc`).
+Vivado simulates RTL only; it does not include a RISC-V C toolchain. To rebuild `rom.hex` from C you need an external RISC-V bare-metal toolchain (e.g. xPack `riscv-none-elf-gcc`).
 
-File:
+Software files:
 - Startup: `software/start.S`
-- Linker: `software/link.ld`
+- Linker script: `software/link.ld`
 - C demo: `software/main.c`
-- Build: `software/build.ps1`
-- ELF -> hex: `software/elf2hex.py`
+- Build script: `software/build.ps1`
+- ELF -> hex converter: `software/elf2hex.py`
 
-Build (vi du):
+Example build command:
 - `powershell -NoProfile -ExecutionPolicy Bypass -File software\\build.ps1 -Prefix riscv-none-elf -GccExe "<toolchain_bin>\\riscv-none-elf-gcc.exe"`
 
-Sau do chay lai TCL mo phong.
+Then re-run the Vivado TCL simulation script.
