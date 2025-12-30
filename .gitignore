@@ -1,0 +1,27 @@
+# Vivado / xsim outputs
+.Xil/
+vivado/vivado_proj/
+vivado/xsim_build/
+**/*.jou
+**/*.log
+**/*.str
+**/*.wdb
+**/*.wcfg
+**/*.pb
+**/xsim.dir/
+**/webtalk*
+**/xvlog.pb
+**/xvlog.log
+**/xelab.pb
+**/xelab.log
+**/xsim.pb
+**/xsim.log
+
+# Icarus outputs (optional)
+sim/sim.out
+sim/run_iverilog.ps1.tmp
+
+# Python/build artifacts
+software/__pycache__/
+software/firmware.elf
+software/firmware.disasm.txt
